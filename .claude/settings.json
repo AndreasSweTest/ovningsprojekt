@@ -1,0 +1,12 @@
+﻿{
+  "permissions": {
+    "allow": ["Read", "Grep", "Glob", "Edit", "Write", "Bash(npm test*)", "Bash(npm run*)", "Bash(npx *)", "Bash(python3 src/legacy/price_calc.py*)"],
+    "ask": ["Bash", "Write(**/package.json)", "Write(**/.env*)"],
+    "deny": ["Bash(rm -rf*)", "Bash(git push --force*)", "Bash(git reset --hard*)"]
+  },
+  "hooks": {
+    "PreToolUse": [{"matcher": "Edit|Write", "hooks": [{"type": "command", "command": "node .claude/hooks/block-test-removal.js"}]}],
+    "PostToolUse": [{"matcher": "Edit|Write", "hooks": [{"type": "command", "command": "bash .claude/hooks/run-checks.sh"}]}],
+    "Stop": [{"hooks": [{"type": "command", "command": "node .claude/hooks/session-save.js"}]}]
+  }
+}
