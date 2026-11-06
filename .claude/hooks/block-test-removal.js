@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env node
+#!/usr/bin/env node
 let input = "";
 process.stdin.on("data", c => input += c);
 process.stdin.on("end", () => {
@@ -9,9 +9,9 @@ process.stdin.on("end", () => {
     const content = String(toolInput.content || "");
     const isTest = filePath.includes(".test.") || filePath.includes("/tests/");
     if (isTest && (content.trim() === "" || /test\.skip|xit\s*\(|xdescribe\s*\(/.test(content))) {
-      console.error("HOOK BLOCK: Agenten får inte ta bort eller stänga av tester.");
+      console.error("HOOK BLOCK: Agenten far inte ta bort eller stanga av tester.");
       process.exit(2);
     }
-  } catch {}
+  } catch (e) {}
   process.exit(0);
 });
