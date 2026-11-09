@@ -42,7 +42,8 @@ export function escapeLike(term: string): string {
 // Söker på del av namn eller e-post. Söktermen får aldrig hamna i felmeddelanden eller loggar.
 export async function searchCustomers(q: string): Promise<Result<Customer[]>> {
   const term = q.trim();
-  if (term.length < MIN_Q || term.length > MAX_Q) {
+  // Postgres avvisar nollbyte i text, så de stoppas här i stället för att ge ett DB-fel.
+  if (term.length < MIN_Q || term.length > MAX_Q || term.includes("\0")) {
     return err("invalid_input", `q måste vara ${MIN_Q}–${MAX_Q} tecken.`);
   }
   const res = await db.query(

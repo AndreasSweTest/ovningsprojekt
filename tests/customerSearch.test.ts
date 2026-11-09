@@ -138,3 +138,12 @@ describe("GET /customers?q=", () => {
     expect(res.body).toEqual([]);
   });
 });
+
+// Fynd från granskningen 2026-11-09.
+describe("GET /customers?q= – gränsfall från granskningen", () => {
+  it("returnerar 400 när q innehåller nollbyte", async () => {
+    const res = await request(app).get("/customers?q=%00%00").set("X-Customer-Id", "1");
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe("invalid_input");
+  });
+});
