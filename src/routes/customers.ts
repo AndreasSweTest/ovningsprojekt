@@ -19,7 +19,7 @@ customers.post("/customers", async (req, res) => {
 // Sök kunder på del av namnet.
 customers.get("/customers", requireCustomer, async (req, res) => {
   const q = typeof req.query.q === "string" ? req.query.q : "";
-  res.json(await searchCustomers(q));
+  sendResult(res, await searchCustomers(q));
 });
 
 // Den inloggade kunden.

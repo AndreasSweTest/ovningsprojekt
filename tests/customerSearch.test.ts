@@ -32,6 +32,13 @@ describe("GET /customers?q=", () => {
     expect(res.body).toEqual([]);
   });
 
+  // Kriterium 6
+  it("returnerar 400 när q är kortare än 2 tecken", async () => {
+    const res = await request(app).get("/customers").query({ q: "a" }).set("X-Customer-Id", "1");
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe("invalid_input");
+  });
+
   // Kriterium 11
   it("returnerar 401 utan inloggning", async () => {
     const res = await request(app).get("/customers").query({ q: "lind" });

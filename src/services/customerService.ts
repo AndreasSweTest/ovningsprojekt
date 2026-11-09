@@ -30,12 +30,16 @@ export async function getCustomer(id: number): Promise<Result<Customer>> {
   return ok(res.rows[0]);
 }
 
-export async function searchCustomers(q: string): Promise<Customer[]> {
+export async function searchCustomers(q: string): Promise<Result<Customer[]>> {
+  const term = q.trim();
+  if (term.length < 2) {
+    return err("invalid_input", "q måste vara 2–100 tecken.");
+  }
   const res = await db.query(
     "SELECT id, uuid, name, email FROM customers WHERE name ILIKE $1 OR email ILIKE $1 ORDER BY id",
-    [`%${q}%`],
+    [`%${term}%`],
   );
-  return res.rows;
+  return ok(res.rows);
 }
 
 export async function listOrdersForCustomer(customerId: number): Promise<OrderSummary[]> {
