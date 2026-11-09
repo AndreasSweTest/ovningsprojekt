@@ -43,7 +43,8 @@ export function escapeLike(term: string): string {
 export async function searchCustomers(q: string): Promise<Result<Customer[]>> {
   const term = q.trim();
   // Postgres avvisar nollbyte i text, så de stoppas här i stället för att ge ett DB-fel.
-  if (term.length < MIN_Q || term.length > MAX_Q || term.includes("\0")) {
+  const length = [...term].length; // i tecken (kodpunkter), inte UTF-16-enheter
+  if (length < MIN_Q || length > MAX_Q || term.includes("\0")) {
     return err("invalid_input", `q måste vara ${MIN_Q}–${MAX_Q} tecken.`);
   }
   const res = await db.query(

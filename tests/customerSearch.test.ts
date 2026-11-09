@@ -146,4 +146,19 @@ describe("GET /customers?q= – gränsfall från granskningen", () => {
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe("invalid_input");
   });
+
+  it("räknar längden i tecken: en emoji är för kort", async () => {
+    const res = await request(app).get("/customers").query({ q: "😀" }).set("X-Customer-Id", "1");
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe("invalid_input");
+  });
+
+  it("räknar längden i tecken: 100 emojis är tillåtet", async () => {
+    const res = await request(app)
+      .get("/customers")
+      .query({ q: "😀".repeat(100) })
+      .set("X-Customer-Id", "1");
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([]);
+  });
 });
