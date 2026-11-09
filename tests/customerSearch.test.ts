@@ -25,6 +25,13 @@ describe("GET /customers?q=", () => {
     expect(res.body).toEqual([expect.objectContaining({ name: "Farid Haddad" })]);
   });
 
+  // Kriterium 4
+  it("returnerar tom lista när ingen kund matchar", async () => {
+    const res = await request(app).get("/customers").query({ q: "zzzz" }).set("X-Customer-Id", "1");
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([]);
+  });
+
   // Kriterium 11
   it("returnerar 401 utan inloggning", async () => {
     const res = await request(app).get("/customers").query({ q: "lind" });
