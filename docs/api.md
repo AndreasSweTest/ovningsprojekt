@@ -15,7 +15,7 @@ Alla anrop utom `POST /customers` och `/health` kräver headern `X-Customer-Id` 
 
 ## Varning: kundsökningen saknar rollkontroll
 
-`GET /customers?q=` är tänkt för kundtjänst, men just nu kontrolleras bara att anroparen är inloggad. **Alla inloggade kunder kan alltså söka fram andra kunders namn och e-post.** Det är ett medvetet, tillfälligt beslut, och endpointen får inte gå i produktion i det här skicket. Se [ADR 0001](adr/0001-kundsokning-utan-roll.md) för konsekvenserna och planen för en rollkontroll (403 för vanliga kunder).
+`GET /customers?q=` är tänkt för kundtjänst, men just nu kontrolleras bara att anroparen är inloggad. **Alla inloggade kunder kan alltså söka fram andra kunders namn och e-post.** Eftersom headern inte slås upp mot databasen räcker det i praktiken att skicka vilket positivt heltal som helst som `X-Customer-Id`, så sökningen är öppen för vem som helst som når API:t. Det är ett medvetet, tillfälligt beslut, och endpointen får inte gå i produktion i det här skicket. Se [ADR 0001](adr/0001-kundsokning-utan-roll.md) för konsekvenserna och planen för en rollkontroll (403 för vanliga kunder).
 
 ## Den äldre modulen
 

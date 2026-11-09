@@ -25,6 +25,7 @@ Det betyder att alternativ C väljs **tillfälligt**, för att bygga och testa s
 ## Konsekvenser
 
 - **Dataläckage (GDPR):** alla inloggade kunder kan söka fram andra kunders namn och e-post. **Endpointen får inte gå i produktion i det här skicket.**
+- **I praktiken behövs inget konto alls.** `requireCustomer` kontrollerar bara att `X-Customer-Id` är ett positivt heltal och slår aldrig upp id:t. Den som skickar `X-Customer-Id: 1` (eller `999999`) räknas som inloggad, så exponeringen gäller i praktiken vem som helst som når API:t.
 - **Uppräkning:** man kan läsa ut hela kundregistret i omgångar genom att söka på vanliga teckenpar. Minst 2 tecken och `LIMIT 50` begränsar risken men eliminerar den inte.
 - Testerna saknar ett 403-fall, trots att `docs/standard.md` kräver det där det är möjligt. Det läggs till tillsammans med rollkontrollen.
 - Söktermen loggas aldrig och står aldrig i felmeddelanden.

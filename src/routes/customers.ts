@@ -16,7 +16,7 @@ customers.post("/customers", async (req, res) => {
   sendResult(res, result, 201);
 });
 
-// Sök kunder på del av namnet.
+// Sök kunder på del av namn eller e-post. Allt som inte är en sträng (saknas, array, objekt) blir "" och ger 400.
 customers.get("/customers", requireCustomer, async (req, res) => {
   const q = typeof req.query.q === "string" ? req.query.q : "";
   sendResult(res, await searchCustomers(q));
