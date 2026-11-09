@@ -1,7 +1,12 @@
 import { Router } from "express";
 import { AuthedRequest, requireCustomer } from "../auth";
 import { sendResult } from "../http";
-import { createCustomer, getCustomer, listOrdersForCustomer } from "../services/customerService";
+import {
+  createCustomer,
+  getCustomer,
+  listOrdersForCustomer,
+  searchCustomers,
+} from "../services/customerService";
 
 export const customers = Router();
 
@@ -9,6 +14,12 @@ export const customers = Router();
 customers.post("/customers", async (req, res) => {
   const result = await createCustomer(req.body ?? {});
   sendResult(res, result, 201);
+});
+
+// Sök kunder på del av namnet.
+customers.get("/customers", requireCustomer, async (req, res) => {
+  const q = typeof req.query.q === "string" ? req.query.q : "";
+  res.json(await searchCustomers(q));
 });
 
 // Den inloggade kunden.

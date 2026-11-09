@@ -30,6 +30,14 @@ export async function getCustomer(id: number): Promise<Result<Customer>> {
   return ok(res.rows[0]);
 }
 
+export async function searchCustomers(q: string): Promise<Customer[]> {
+  const res = await db.query(
+    "SELECT id, uuid, name, email FROM customers WHERE name ILIKE $1 ORDER BY id",
+    [`%${q}%`],
+  );
+  return res.rows;
+}
+
 export async function listOrdersForCustomer(customerId: number): Promise<OrderSummary[]> {
   const res = await db.query(
     `SELECT id, status, created_at AS "createdAt"
