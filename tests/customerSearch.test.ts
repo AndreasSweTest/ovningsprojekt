@@ -39,9 +39,32 @@ describe("GET /customers?q=", () => {
     expect(res.body).toEqual([]);
   });
 
+  // Kriterium 5
+  it("returnerar 400 när q saknas", async () => {
+    const res = await request(app).get("/customers").set("X-Customer-Id", "1");
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe("invalid_input");
+  });
+
+  it.each(["", "   "])("returnerar 400 när q är %j", async (q) => {
+    const res = await request(app).get("/customers").query({ q }).set("X-Customer-Id", "1");
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe("invalid_input");
+  });
+
   // Kriterium 6
   it("returnerar 400 när q är kortare än 2 tecken", async () => {
     const res = await request(app).get("/customers").query({ q: "a" }).set("X-Customer-Id", "1");
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe("invalid_input");
+  });
+
+  // Kriterium 7
+  it("returnerar 400 när q är längre än 100 tecken", async () => {
+    const res = await request(app)
+      .get("/customers")
+      .query({ q: "a".repeat(101) })
+      .set("X-Customer-Id", "1");
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe("invalid_input");
   });

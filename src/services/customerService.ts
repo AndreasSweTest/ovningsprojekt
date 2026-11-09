@@ -32,7 +32,7 @@ export async function getCustomer(id: number): Promise<Result<Customer>> {
 
 export async function searchCustomers(q: string): Promise<Result<Customer[]>> {
   const term = q.trim();
-  if (term.length < 2) {
+  if (term.length < 2 || term.length > 100) {
     return err("invalid_input", "q måste vara 2–100 tecken.");
   }
   const res = await db.query(
