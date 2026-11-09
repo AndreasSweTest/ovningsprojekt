@@ -1,11 +1,22 @@
 import request from "supertest";
 import { createApp } from "../src/app";
+import { db } from "../src/db";
 import { closeDb, resetDb } from "./helpers/db";
 
 const app = createApp();
 
 beforeEach(resetDb);
 afterAll(closeDb);
+
+// Lägger in fiktiva testkunder med e-post på example.com.
+async function addCustomers(names: string[]): Promise<void> {
+  for (const [i, name] of names.entries()) {
+    await db.query("INSERT INTO customers (name, email) VALUES ($1, $2)", [
+      name,
+      `testkund${i}@example.com`,
+    ]);
+  }
+}
 
 // Kundsökning, se docs/plan-kundsokning.md.
 describe("GET /customers?q=", () => {
@@ -81,6 +92,27 @@ describe("GET /customers?q=", () => {
     const res = await request(app).get("/customers").query({ q }).set("X-Customer-Id", "1");
     expect(res.status).toBe(200);
     expect(res.body).toEqual([]);
+  });
+
+  // Kriterium 10
+  it("sorterar träffarna på namn och sedan id", async () => {
+    await addCustomers(["Aaron Test", "Aaron Test"]); // får id 101 och 102
+    const res = await request(app)
+      .get("/customers")
+      .query({ q: "example.com" })
+      .set("X-Customer-Id", "1");
+    expect(res.status).toBe(200);
+    expect(res.body.map((c: { id: number }) => c.id)).toEqual([101, 102, 1, 2, 3, 4, 5, 6, 7, 8]);
+  });
+
+  it("returnerar högst 50 träffar", async () => {
+    await addCustomers(Array.from({ length: 51 }, (_, i) => `Testkund ${i}`));
+    const res = await request(app)
+      .get("/customers")
+      .query({ q: "example.com" })
+      .set("X-Customer-Id", "1");
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveLength(50);
   });
 
   // Kriterium 11

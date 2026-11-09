@@ -36,7 +36,7 @@ export async function searchCustomers(q: string): Promise<Result<Customer[]>> {
     return err("invalid_input", "q måste vara 2–100 tecken.");
   }
   const res = await db.query(
-    "SELECT id, uuid, name, email FROM customers WHERE name ILIKE $1 OR email ILIKE $1 ORDER BY id",
+    "SELECT id, uuid, name, email FROM customers WHERE name ILIKE $1 OR email ILIKE $1 ORDER BY name, id LIMIT 50",
     [`%${term.replace(/[\\%_]/g, "\\$&")}%`],
   );
   return ok(res.rows);
