@@ -103,6 +103,8 @@ describe("GET /customers?q=", () => {
   // Kriterium 10
   it("sorterar träffarna på namn och sedan id", async () => {
     await addCustomers(["Aaron Test", "Aaron Test"]); // får id 101 och 102
+    // Flyttar rad 101 fysiskt efter 102, så att testet blir rött om "id" saknas i ORDER BY.
+    await db.query("UPDATE customers SET email = email WHERE id = 101");
     const res = await request(app)
       .get("/customers")
       .query({ q: "example.com" })
@@ -160,5 +162,45 @@ describe("GET /customers?q= – gränsfall från granskningen", () => {
       .set("X-Customer-Id", "1");
     expect(res.status).toBe(200);
     expect(res.body).toEqual([]);
+  });
+
+  it("returnerar 400 när q är ett objekt", async () => {
+    const res = await request(app).get("/customers?q[a]=lind").set("X-Customer-Id", "1");
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe("invalid_input");
+  });
+
+  it("tillåter exakt 2 tecken", async () => {
+    const res = await request(app).get("/customers").query({ q: "ek" }).set("X-Customer-Id", "1");
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([expect.objectContaining({ name: "Bror Ek" })]);
+  });
+
+  it("tillåter exakt 100 tecken", async () => {
+    const res = await request(app)
+      .get("/customers")
+      .query({ q: "a".repeat(100) })
+      .set("X-Customer-Id", "1");
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([]);
+  });
+
+  it("trimmar q innan sökningen", async () => {
+    const res = await request(app)
+      .get("/customers")
+      .query({ q: "  lind  " })
+      .set("X-Customer-Id", "1");
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([expect.objectContaining({ name: "Alva Lind" })]);
+  });
+
+  it("hittar en kund vars namn innehåller \\, _ och % bokstavligt", async () => {
+    await addCustomers(["Test a\\b_c%d"]);
+    const res = await request(app)
+      .get("/customers")
+      .query({ q: "a\\b_c%d" })
+      .set("X-Customer-Id", "1");
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([expect.objectContaining({ name: "Test a\\b_c%d" })]);
   });
 });
