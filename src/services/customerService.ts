@@ -32,7 +32,7 @@ export async function getCustomer(id: number): Promise<Result<Customer>> {
 
 export async function searchCustomers(q: string): Promise<Customer[]> {
   const res = await db.query(
-    "SELECT id, uuid, name, email FROM customers WHERE name ILIKE $1 ORDER BY id",
+    "SELECT id, uuid, name, email FROM customers WHERE name ILIKE $1 OR email ILIKE $1 ORDER BY id",
     [`%${q}%`],
   );
   return res.rows;

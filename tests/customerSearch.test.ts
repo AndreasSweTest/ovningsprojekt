@@ -18,6 +18,13 @@ describe("GET /customers?q=", () => {
     ]);
   });
 
+  // Kriterium 2
+  it("hittar en kund på en del av e-postadressen", async () => {
+    const res = await request(app).get("/customers").query({ q: "farid.h" }).set("X-Customer-Id", "1");
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([expect.objectContaining({ name: "Farid Haddad" })]);
+  });
+
   // Kriterium 11
   it("returnerar 401 utan inloggning", async () => {
     const res = await request(app).get("/customers").query({ q: "lind" });
