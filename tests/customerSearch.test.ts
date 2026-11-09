@@ -31,14 +31,20 @@ describe("GET /customers?q=", () => {
 
   // Kriterium 2
   it("hittar en kund på en del av e-postadressen", async () => {
-    const res = await request(app).get("/customers").query({ q: "farid.h" }).set("X-Customer-Id", "1");
+    const res = await request(app)
+      .get("/customers")
+      .query({ q: "farid.h" })
+      .set("X-Customer-Id", "1");
     expect(res.status).toBe(200);
     expect(res.body).toEqual([expect.objectContaining({ name: "Farid Haddad" })]);
   });
 
   // Kriterium 3
   it("bryr sig inte om skiftläge, inte heller för å, ä och ö", async () => {
-    const res = await request(app).get("/customers").query({ q: "NYSTRÖM" }).set("X-Customer-Id", "1");
+    const res = await request(app)
+      .get("/customers")
+      .query({ q: "NYSTRÖM" })
+      .set("X-Customer-Id", "1");
     expect(res.status).toBe(200);
     expect(res.body).toEqual([expect.objectContaining({ name: "Hugo Nyström" })]);
   });

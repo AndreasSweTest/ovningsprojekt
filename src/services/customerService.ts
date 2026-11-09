@@ -30,14 +30,27 @@ export async function getCustomer(id: number): Promise<Result<Customer>> {
   return ok(res.rows[0]);
 }
 
+export const MIN_Q = 2;
+export const MAX_Q = 100;
+export const SEARCH_LIMIT = 50;
+
+// Gör \, % och _ till vanliga tecken i ett LIKE-mönster (Postgres standard-escape är \).
+export function escapeLike(term: string): string {
+  return term.replace(/[\\%_]/g, "\\$&");
+}
+
+// Söker på del av namn eller e-post. Söktermen får aldrig hamna i felmeddelanden eller loggar.
 export async function searchCustomers(q: string): Promise<Result<Customer[]>> {
   const term = q.trim();
-  if (term.length < 2 || term.length > 100) {
-    return err("invalid_input", "q måste vara 2–100 tecken.");
+  if (term.length < MIN_Q || term.length > MAX_Q) {
+    return err("invalid_input", `q måste vara ${MIN_Q}–${MAX_Q} tecken.`);
   }
   const res = await db.query(
-    "SELECT id, uuid, name, email FROM customers WHERE name ILIKE $1 OR email ILIKE $1 ORDER BY name, id LIMIT 50",
-    [`%${term.replace(/[\\%_]/g, "\\$&")}%`],
+    `SELECT id, uuid, name, email FROM customers
+      WHERE name ILIKE $1 OR email ILIKE $1
+      ORDER BY name, id
+      LIMIT $2`,
+    [`%${escapeLike(term)}%`, SEARCH_LIMIT],
   );
   return ok(res.rows);
 }
