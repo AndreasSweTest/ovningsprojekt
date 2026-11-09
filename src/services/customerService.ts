@@ -37,7 +37,7 @@ export async function searchCustomers(q: string): Promise<Result<Customer[]>> {
   }
   const res = await db.query(
     "SELECT id, uuid, name, email FROM customers WHERE name ILIKE $1 OR email ILIKE $1 ORDER BY id",
-    [`%${term}%`],
+    [`%${term.replace(/[\\%_]/g, "\\$&")}%`],
   );
   return ok(res.rows);
 }

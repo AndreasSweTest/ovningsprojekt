@@ -76,6 +76,13 @@ describe("GET /customers?q=", () => {
     expect(res.body.error.code).toBe("invalid_input");
   });
 
+  // Kriterium 9
+  it.each(["%%", "__"])("tolkar jokertecknen i %j bokstavligt", async (q) => {
+    const res = await request(app).get("/customers").query({ q }).set("X-Customer-Id", "1");
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([]);
+  });
+
   // Kriterium 11
   it("returnerar 401 utan inloggning", async () => {
     const res = await request(app).get("/customers").query({ q: "lind" });
