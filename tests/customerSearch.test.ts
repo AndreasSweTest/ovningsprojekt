@@ -69,6 +69,13 @@ describe("GET /customers?q=", () => {
     expect(res.body.error.code).toBe("invalid_input");
   });
 
+  // Kriterium 8
+  it("returnerar 400 när q skickas flera gånger", async () => {
+    const res = await request(app).get("/customers?q=lind&q=berg").set("X-Customer-Id", "1");
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe("invalid_input");
+  });
+
   // Kriterium 11
   it("returnerar 401 utan inloggning", async () => {
     const res = await request(app).get("/customers").query({ q: "lind" });
