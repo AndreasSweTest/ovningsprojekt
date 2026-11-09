@@ -89,4 +89,14 @@ describe("GET /customers?q=", () => {
     expect(res.status).toBe(401);
     expect(res.body.error.code).toBe("unauthorized");
   });
+
+  // Kriterium 12
+  it("är opåverkad av SQL-injektion i q", async () => {
+    const res = await request(app)
+      .get("/customers")
+      .query({ q: "' OR 1=1 --" })
+      .set("X-Customer-Id", "1");
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([]);
+  });
 });
