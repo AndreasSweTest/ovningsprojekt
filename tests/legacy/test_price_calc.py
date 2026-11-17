@@ -141,3 +141,29 @@ def test_nattrapporten_tolkar_datumet_som_varde():
     code, out, _ = run(REPORT, "2026-10-05' or '1'='1")
     assert code != 0
     assert "betalda ordrar" not in out
+
+
+# Refaktoreringssteg 2: modulen kopplar inte upp sig mot databasen när den importeras (P2).
+def test_modulen_gar_att_importera_utan_databas():
+    code = (
+        "import sys; sys.path.insert(0, sys.argv[1]); import price_calc; "
+        "print('importerad')"
+    )
+    env = {**os.environ, "DATABASE_URL": "postgresql://ingen:ingen@127.0.0.1:1/finnsinte"}
+    res = subprocess.run(
+        [sys.executable, "-c", code, str(SCRIPT.parent)],
+        capture_output=True, text=True, env=env, timeout=60,
+    )
+    assert res.returncode == 0, res.stderr
+    assert res.stdout.strip() == "importerad"
+
+
+def test_calc_price_tar_emot_en_uppkoppling():
+    sys.path.insert(0, str(SCRIPT.parent))
+    try:
+        import price_calc
+    finally:
+        sys.path.remove(str(SCRIPT.parent))
+    with psycopg.connect(TEST_DB, autocommit=True) as conn:
+        p = price_calc.calc_price(1042, conn)
+    assert (str(p.net), str(p.vat), str(p.total)) == ("950", "237.5", "1187.5")

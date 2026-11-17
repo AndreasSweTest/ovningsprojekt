@@ -7,7 +7,6 @@ from decimal import Decimal
 import psycopg
 
 DB = os.environ.get("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/butik")
-conn = psycopg.connect(DB, autocommit=True)
 
 MOMS = 25
 LOGG = os.path.join(os.path.dirname(__file__), "price_calc.log")
@@ -25,7 +24,17 @@ def _kapa(x):
     return Decimal(int(x * 100)) / 100
 
 
-def calc_price(order_id):
+def connect():
+    # uppkopplingen skapas när den behövs, inte när modulen importeras
+    return psycopg.connect(DB, autocommit=True)
+
+
+def calc_price(order_id, conn=None):
+    # utan conn öppnas och stängs en egen uppkoppling för just det här anropet
+    if conn is None:
+        with connect() as egen:
+            return calc_price(order_id, egen)
+
     cur = conn.cursor()
     cur.execute("select discount_code from orders where id = %s", (order_id,))
     rad = cur.fetchone()
