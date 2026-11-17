@@ -5,12 +5,13 @@ Branch: `feat/rigg-hooks` (från `main`). Uppgift: laga hookarna så att riggen 
 ## Läge
 
 <!-- auto:start -->
-_Fylls i automatiskt av .claude/hooks/session-save.js, senast 11:38._
+_Fylls i automatiskt av .claude/hooks/session-save.js, senast 11:48._
 
-- **Branch:** `main`
-- **Senaste commit:** eb6dc78 docs: auto-blocket i sessionsloggen uppdaterat av Stop-hooken
+- **Branch:** `refactor/price-calc`
+- **Senaste commit:** e6f2737 docs: sessionsloggen för hookarna, senaste auto-block
 
 **Dagens commits:**
+- e6f2737 docs: sessionsloggen för hookarna, senaste auto-block
 - eb6dc78 docs: auto-blocket i sessionsloggen uppdaterat av Stop-hooken
 - d5dd17a docs: hela sviten grön (79/79) och minneskedjan provad live
 - 1dcc9d2 docs: städa tomma sessionsmallar och skriv sessionslogg för hookarna
@@ -23,7 +24,7 @@ _Fylls i automatiskt av .claude/hooks/session-save.js, senast 11:38._
 - bf83940 feat(rigg): testskyddet fungerar för Edit, Write och MultiEdit
 
 **Ocommittade ändringar:**
-- inga
+- `?? docs/codemap-price-calc.md`
 <!-- auto:end -->
 
 Riggen har sex hooks, och alla är inkopplade i `.claude/settings.json`:
