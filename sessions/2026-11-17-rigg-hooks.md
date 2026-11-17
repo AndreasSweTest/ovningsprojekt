@@ -4,6 +4,26 @@ Branch: `feat/rigg-hooks` (från `main`). Uppgift: laga hookarna så att riggen 
 
 ## Läge
 
+<!-- auto:start -->
+_Fylls i automatiskt av .claude/hooks/session-save.js, senast 11:27._
+
+- **Branch:** `feat/rigg-hooks`
+- **Senaste commit:** 1dcc9d2 docs: städa tomma sessionsmallar och skriv sessionslogg för hookarna
+
+**Dagens commits:**
+- 1dcc9d2 docs: städa tomma sessionsmallar och skriv sessionslogg för hookarna
+- 2e89827 feat(rigg): koppla in alla sex hooks i settings.json
+- 02dcf2e feat(rigg): guard-hook stoppar farliga kommandon och skrivning till .env
+- 566c869 fix(rigg): session-load hoppar över tomma mallar
+- 828b1a2 feat(rigg): minneskedja – Stop fyller i dagens logg, SessionStart laddar den senaste
+- 91799b9 fix(rigg): tvinga LF i skalskript så att run-checks.sh fungerar efter checkout
+- 2e6b584 feat(rigg): run-checks kör ESLint och tsc och stoppar med rättningstips
+- bf83940 feat(rigg): testskyddet fungerar för Edit, Write och MultiEdit
+
+**Ocommittade ändringar:**
+- inga
+<!-- auto:end -->
+
 Riggen har sex hooks, och alla är inkopplade i `.claude/settings.json`:
 
 | Händelse | Matcher | Skript | Stoppar |
@@ -37,17 +57,18 @@ Testerna ligger i `tests/hooks.test.ts` (39 tester). Ingen produktionskod i `src
 4. `guard.js` stoppade `git clean -f` live.
 5. `guard.js` gav ett **falsklarm** på ett commit-meddelande som nämnde `git clean -f`. Det är rättat: text inom citattecken ignoreras, utom för `.env`-regeln. Två tester täcker fallet.
 
+**Minneskedjan live:** när passets sista svar avslutades fyllde Stop-hooken i auto-blocket under "## Läge" i den här handskrivna loggen: branch, senaste commit och dagens åtta commits. Ingen ny fil skapades, och den handskrivna texten är orörd.
+
 **Städat:** 20 tomma sessionsmallar från den gamla Stop-hooken är borttagna. 14 var ospårade och togs bort direkt. 6 var spårade och togs bort med `git rm`, så de finns kvar i historiken.
 
 ## Vad misslyckades
 
-- **API-testerna (40 st) kunde inte köras i slutet av passet,** eftersom Docker Desktop inte var igång (`dockerDesktopLinuxEngine` saknas). Inget i `src/` eller i testerna för API:t har ändrats. Kör `npm run db:up` och `npm test` när Docker är startat.
+- **API-testerna (40 st) kunde först inte köras,** eftersom Docker Desktop inte var igång (`dockerDesktopLinuxEngine` saknas). Löst: Docker startades, sedan `npm run db:up`. Därefter var hela sviten grön, **79 av 79** (`orders`, `customers`, `customerSearch` och `hooks`). Lint och typecheck går också igenom.
 - **Write-verktyget behöll BOM-tecknet** när filer skrevs om. Det bröt `run-checks.sh` igen tills tecknet togs bort med `sed`.
 - **Git varnar för CRLF** på alla nya filer. För `*.sh` är det löst med `.gitattributes` (`eol=lf`). JS-filerna fungerar med CRLF.
 
 ## Vad återstår
 
-- Starta Docker och kör hela sviten (`npm test`). Förväntat: 79 gröna.
 - Öppna en PR för `feat/rigg-hooks` och merga till `main`.
 - Valt bort, att motivera i mallen: egna ESLint-regler för `docs/standard.md`, till exempel ett förbud mot SQL i strängmallar och `no-console` i `src/`. De skulle göra fler regler kontrollerbara, men passet skulle inte röra produktionskonfigurationen.
 - `run-checks.sh` kör `tsc` på hela projektet efter varje ändring, vilket tar cirka 1,5–3 sekunder. Det kan behöva mätas om projektet växer.
