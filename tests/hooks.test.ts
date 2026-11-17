@@ -1,6 +1,7 @@
 // Tester för riggens hooks i .claude/hooks/. Varje hook får samma JSON på stdin som Claude Code skickar.
 import { spawnSync } from "node:child_process";
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 
 const ROOT = path.join(__dirname, "..");
@@ -122,4 +123,71 @@ describe("run-checks.sh (PostToolUse Edit|Write)", () => {
     expect(r.err).toMatch(/TS2322/);
     expect(r.err).toMatch(/Så rättar du/);
   }, 120000);
+});
+
+describe("minneskedjan: session-save.js (Stop) och session-load.js (SessionStart)", () => {
+  const today = new Date().toLocaleDateString("sv-SE"); // YYYY-MM-DD
+  let project: string;
+  const runIn = (hook: string) => {
+    const res = spawnSync(process.execPath, [path.join(HOOKS, hook)], {
+      input: "{}",
+      encoding: "utf8",
+      cwd: project,
+      env: { ...process.env, CLAUDE_PROJECT_DIR: project },
+    });
+    return { code: res.status, out: res.stdout, err: res.stderr };
+  };
+  beforeEach(() => {
+    project = mkdtempSync(path.join(os.tmpdir(), "rigg-"));
+    mkdirSync(path.join(project, "sessions"));
+  });
+  afterEach(() => rmSync(project, { recursive: true, force: true }));
+
+  it("skapar en mall för dagen, och bara en även om Stop körs flera gånger", () => {
+    runIn("session-save.js");
+    runIn("session-save.js");
+    expect(readdirSync(path.join(project, "sessions"))).toEqual([`${today}.md`]);
+    const log = readFileSync(path.join(project, "sessions", `${today}.md`), "utf8");
+    for (const h of [
+      "## Läge",
+      "## Vad fungerade (bevis)",
+      "## Vad misslyckades",
+      "## Vad återstår",
+      "## Beslut",
+    ]) {
+      expect(log).toContain(h);
+    }
+    expect(log).toMatch(/<!-- auto:start -->/);
+  });
+
+  it("fyller i dagens befintliga logg utan att röra det som är skrivet för hand", () => {
+    spawnSync("git", ["init", "-q", "-b", "main"], { cwd: project });
+    const file = path.join(project, "sessions", `${today}-kundsokning.md`);
+    writeFileSync(file, "# Session\n\n## Läge\n\nMin egen text.\n\n## Vad återstår\n\n- X\n");
+    const r = runIn("session-save.js");
+    expect(r.code).toBe(0);
+    expect(readdirSync(path.join(project, "sessions"))).toEqual([`${today}-kundsokning.md`]);
+    const log = readFileSync(file, "utf8");
+    expect(log).toContain("Min egen text.");
+    expect(log).toContain("- X");
+    expect(log).toMatch(/<!-- auto:start -->[\s\S]*Branch[\s\S]*<!-- auto:end -->/);
+  });
+
+  it("laddar den senaste loggen som kontext i nästa session", () => {
+    writeFileSync(
+      path.join(project, "sessions", "2026-01-01-exempel.md"),
+      "# Session\n\n## Läge\n\nExempel.\n\n## Vad återstår\n\n- Skriv fler tester\n\n## Beslut\n\n- Behåll Python 3.13\n",
+    );
+    const r = runIn("session-load.js");
+    expect(r.code).toBe(0);
+    expect(r.out).toMatch(/sessions\/2026-01-01-exempel\.md/);
+    expect(r.out).toMatch(/Skriv fler tester/);
+    expect(r.out).toMatch(/Behåll Python 3\.13/);
+  });
+
+  it("säger till när ingen sessionslogg finns", () => {
+    const r = runIn("session-load.js");
+    expect(r.code).toBe(0);
+    expect(r.out).toMatch(/Ingen sessionslogg/);
+  });
 });
