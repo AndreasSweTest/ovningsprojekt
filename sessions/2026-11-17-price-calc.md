@@ -14,7 +14,20 @@ Researchen, säkerhetsnätet och refaktoreringssteg 1 är klara.
 
 - **Steg 3, ren beräkning (`f45eb6b`):** `price_from(lines, percent)` räknar utan databas och loggfil, och `calc_price` hämtar data och anropar den. Pytest ger 20 av 20 gröna (varav 5 utan databas) och Jest 79 av 79.
 
-**Kravet på minst tre refaktoreringssteg med gröna tester och en commit per steg är uppfyllt.** Nästa steg är migreringsplanen för databasen.
+**Kravet på minst tre refaktoreringssteg med gröna tester och en commit per steg är uppfyllt.**
+
+- **Migreringsplan (`docs/migration-plan-price-calc.md`):** två expand/contract-spår.
+  - Spår A, lagrade belopp med två decimaler: A1 kolumner, A2 backfill, A3 dubbelskrivning, A4 byt läsare, A5 `NOT NULL`.
+  - Spår B, integritet: B1 fem constraints `NOT VALID`, B2 `VALIDATE`.
+
+  Alla steg går att backa. Inget steg tar bort data. SQL:en för A1, B1 och B2 och kontrollfrågan är provkörda upp och ner mot `butik_test`.
+
+### Migreringsplanen i detalj
+
+- **Datakontroll först:** 0 rader utan order, 0 ordrar utan kund, 0 okända rabattkoder och 0 procentsatser utanför 0–100. Statusvärdena är `cancelled`, `new`, `paid` och `shipped`, och den enda ordern med utgången kod är 1045.
+- **Provkörning:** kontrollfrågan gav 0 avvikelser efter en provisorisk backfill med `calc_price`. Efter att momsen för 1044 hade ändrats med 1 öre hittade den exakt 1044. B1 stoppade alla fyra försök med felaktig data. `up` följt av `down` gav samma schema för båda spåren.
+- **Ett första misslyckat försök:** schemajämförelsen visade skillnader. Felsökningen visade att skillnaden bara var den slumpade `\restrict`-rad som `pg_dump` skriver i varje dump. Jämförelsen gjordes om utan den raden. Kontrollfrågan kördes inte första gången, eftersom en sökväg i Bash-format skickades till Python på Windows.
+- **Viktigt fynd:** den främmande nyckeln `orders.discount_code → discounts` (B1) gör att K7 och K9 inte längre kan lägga in sina testordrar med okända koder. Testerna måste skrivas om i samma commit som B1, eller så utelämnas den nyckeln. Det beslutet behövs innan B1.
 
 ### Steg 1 i detalj
 
@@ -74,7 +87,8 @@ Alla 6 mutationer fångades. Filen återställdes från originalet efter varje k
 
 ## Vad återstår
 
-- Migreringsplan i expand/contract-steg för belopp med två decimaler (P4). Beslut behövs om rabatternas giltighetstid (P5) och status (P6).
+- Genomföra migreringarna (spår B först, sedan A1–A5) som filer i `db/migrations/` med `up` och `down`. Beslut behövs först: ska okända rabattkoder fortsätta ignoreras (påverkar B1, K7 och K9)? Hur ska rabatternas giltighetstid (P5) och status (P6) hanteras?
+- Merga `refactor/price-calc` till `main`.
 - Rätta `npm run test:legacy` så att det använder `.venv`, eller dokumentera kommandot i README:n.
 - `session-save.js` fyller i den **alfabetiskt sista** av dagens loggar (`2026-11-17-rigg-hooks.md`), inte den senast ändrade. Det bör ändras till senast ändrad, eller dokumenteras.
 

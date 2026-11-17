@@ -112,6 +112,8 @@ Varje steg ändrar strukturen utan att ändra utdata, så att alla karakteriseri
 
 ## 7. Öppna frågor inför migreringsplanen
 
+Migreringsplanen finns i `docs/migration-plan-price-calc.md`: spår A lagrar beloppen (A1–A5) och spår B lägger till integritetsregler (B1–B2). Frågorna nedan är kvar för de beslut som ligger utanför planen.
+
 - Ska belopp lagras och returneras med fasta två decimaler? Det är en expand/contract-kandidat: lägg till en ny kolumn eller ett nytt fält, fyll båda, byt läsare och ta bort det gamla.
 - Ska `discounts.valid_from` och `valid_to` börja gälla? Hur påverkas historiska ordrar som redan har fakturerats med utgångna koder?
 - Ska prisberäkningen flyttas till TypeScript, så att API:t slipper starta en Python-process per anrop, eller ska Python ligga kvar för rapportens skull?
