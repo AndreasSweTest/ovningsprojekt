@@ -104,7 +104,7 @@ Varje steg ändrar strukturen utan att ändra utdata, så att alla karakteriseri
 - För bakåtkompatibilitet behålls namnet `conn` tills rapporten är uppdaterad i samma commit.
 - Utdata är oförändrade, och alla K-tester är gröna. Vinsten är att modulen går att importera utan databas, och det öppnar för enhetstester.
 
-**Steg 3 – Bryt ut den rena beräkningen från databasdelen**
+**Steg 3 – Bryt ut den rena beräkningen från databasdelen** ✅ Klart i `f45eb6b`. Fem enhetstester med markeringen `nodb` körs på 0,16 s utan databas. En mutation, moms på okapat netto, överlevde. Den är en ekvivalent mutant vid 25 % moms: kapningen tar bort mindre än 0,01 kr, och 25 % av det når aldrig nästa öre. Den blir relevant först om momssatsen ändras.
 - Ny ren funktion `price_from(lines, percent) -> Pris`, utan I/O: summa, rabatt, `_kapa` och moms, exakt som idag. `calc_price` hämtar data och anropar `price_from`. Lägg till enhetstester för `price_from` direkt, så att K3 (kapning) och K6 (inga rader) kan testas utan databas.
 - Utdata är oförändrade. Vinsten är att beräkningen blir testbar och att en senare flytt till TypeScript blir en översättning av en enda ren funktion.
 

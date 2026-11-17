@@ -12,7 +12,9 @@ Researchen, säkerhetsnätet och refaktoreringssteg 1 är klara.
 
 - **Steg 2, ingen uppkoppling vid import (`b1d48c4`):** `connect()` skapar uppkopplingen när den behövs. `calc_price(order_id, conn=None)` tar emot en uppkoppling eller öppnar en egen, och rapporten skickar sin egen. Pytest ger 15 av 15 gröna och Jest 79 av 79.
 
-Nästa steg, efter godkännande: refaktoreringssteg 3, bryt ut den rena beräkningen.
+- **Steg 3, ren beräkning (`f45eb6b`):** `price_from(lines, percent)` räknar utan databas och loggfil, och `calc_price` hämtar data och anropar den. Pytest ger 20 av 20 gröna (varav 5 utan databas) och Jest 79 av 79.
+
+**Kravet på minst tre refaktoreringssteg med gröna tester och en commit per steg är uppfyllt.** Nästa steg är migreringsplanen för databasen.
 
 ### Steg 1 i detalj
 
@@ -26,6 +28,22 @@ Nästa steg, efter godkännande: refaktoreringssteg 3, bryt ut den rena beräkni
 - **Ändring:** `conn = psycopg.connect(...)` på modulnivå ersattes av `connect()`. `calc_price` öppnar och stänger en egen uppkoppling (`with connect()`) om ingen skickas in. `nightly_report.py` importerar `connect` i stället för `conn`.
 - **Grönt efter:** 15 av 15 pytest-tester och 79 av 79 Jest-tester. Alla K-tester var oförändrade, så utdata är desamma via både API:t och rapporten.
 - **Beslut:** den globala `conn` togs bort i stället för att behållas. `grep` visade att rapporten var den enda användaren, och den uppdaterades i samma commit.
+
+### Steg 3 i detalj
+
+- **Rött först:** fem nya enhetstester för `price_from` (K1, K2, K3, K6 och att loggfilen inte skrivs) gav `AttributeError: module 'price_calc' has no attribute 'price_from'`.
+- **Ändring:** summa, rabatt, `_kapa` och moms flyttades oförändrade till `price_from`. `calc_price` hämtar rader och procentsats, anropar `price_from` och loggar `pris.total`.
+- **Testerna behöver ingen databas:** markeringen `nodb` (registrerad i `pytest.ini`) hoppar över återställningen av databasen. Bevis: `-m nodb` med `TEST_DATABASE_URL` mot en port som inte går att nå ger `5 passed` på 0,16 s.
+- **Grönt efter:** 20 av 20 pytest-tester och 79 av 79 Jest-tester.
+- **Mutationer på `price_from`, bara enhetstester:**
+
+| Mutation | Resultat |
+|---|---|
+| Avrunda i stället för att kapa | 1 rött |
+| Ingen rabatt | 2 röda |
+| Moms på okapat netto | 0 röda: **ekvivalent mutant** |
+
+  Den tredje mutationen ger samma resultat för alla belopp vid 25 % moms. Kapningen tar bort mindre än 0,01 kr, och `net × 0,25` slutar alltid på ,xx00, ,xx25, ,xx50 eller ,xx75, så tillägget (mindre än 0,0025) når aldrig nästa öre. En sökning över alla priser från 1,00 till 999,99 kr med 10, 15 och 20 % rabatt hittade ingen skillnad. Därför lades inget test till, eftersom ett sådant test inte kan bli rött. Det dokumenteras i stället, och det blir relevant om momssatsen ändras.
 
 ## Vad fungerade (bevis)
 
@@ -56,7 +74,6 @@ Alla 6 mutationer fångades. Filen återställdes från originalet efter varje k
 
 ## Vad återstår
 
-- Refaktoreringssteg 1–3 enligt codemap:en, avsnitt 6, med gröna tester och en egen commit efter varje steg.
 - Migreringsplan i expand/contract-steg för belopp med två decimaler (P4). Beslut behövs om rabatternas giltighetstid (P5) och status (P6).
 - Rätta `npm run test:legacy` så att det använder `.venv`, eller dokumentera kommandot i README:n.
 - `session-save.js` fyller i den **alfabetiskt sista** av dagens loggar (`2026-11-17-rigg-hooks.md`), inte den senast ändrade. Det bör ändras till senast ändrad, eller dokumenteras.
