@@ -1,6 +1,14 @@
 // Tester för riggens hooks i .claude/hooks/. Varje hook får samma JSON på stdin som Claude Code skickar.
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  utimesSync,
+  writeFileSync,
+} from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
@@ -183,6 +191,23 @@ describe("minneskedjan: session-save.js (Stop) och session-load.js (SessionStart
     expect(r.out).toMatch(/sessions\/2026-01-01-exempel\.md/);
     expect(r.out).toMatch(/Skriv fler tester/);
     expect(r.out).toMatch(/Behåll Python 3\.13/);
+  });
+
+  it("hoppar över tomma mallar och laddar den senaste loggen med innehåll", () => {
+    const sessions = path.join(project, "sessions");
+    writeFileSync(
+      path.join(sessions, "2026-01-01-riktig.md"),
+      "## Vad återstår\n\n- Riktig punkt\n",
+    );
+    const old = new Date("2026-01-01T12:00:00");
+    utimesSync(path.join(sessions, "2026-01-01-riktig.md"), old, old);
+    writeFileSync(
+      path.join(sessions, "2026-01-02T10-00-00.md"),
+      "# Session\n\n## Lage\n\n## Vad aterstar\n\n## Beslut\n",
+    );
+    const r = runIn("session-load.js");
+    expect(r.out).toMatch(/2026-01-01-riktig\.md/);
+    expect(r.out).toMatch(/Riktig punkt/);
   });
 
   it("säger till när ingen sessionslogg finns", () => {

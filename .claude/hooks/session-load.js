@@ -9,6 +9,14 @@ const dir = path.join(root, "sessions");
 const WANTED = [/^l[äa]ge/i, /^vad [åa]terst[åa]r/i, /^beslut/i];
 const MAX_LINES = 80;
 
+// En logg räknas bara om den har text utöver rubriker och auto-blocket, så tomma mallar hoppas över.
+function hasContent(text) {
+  return text
+    .replace(/<!-- auto:start -->[\s\S]*?<!-- auto:end -->/g, "")
+    .split(/\r?\n/)
+    .some((l) => l.trim() !== "" && !/^#/.test(l.trim()));
+}
+
 function latestLog() {
   let files = [];
   try {
@@ -16,11 +24,13 @@ function latestLog() {
   } catch {
     return null;
   }
-  return (
-    files
-      .map((f) => ({ f, t: fs.statSync(path.join(dir, f)).mtimeMs }))
-      .sort((a, b) => b.t - a.t)[0]?.f || null
-  );
+  const newestFirst = files
+    .map((f) => ({ f, t: fs.statSync(path.join(dir, f)).mtimeMs }))
+    .sort((a, b) => b.t - a.t);
+  for (const { f } of newestFirst) {
+    if (hasContent(fs.readFileSync(path.join(dir, f), "utf8"))) return f;
+  }
+  return null;
 }
 
 // Plockar ut de "## "-avsnitt vars rubrik matchar WANTED.
