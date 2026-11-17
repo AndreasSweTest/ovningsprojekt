@@ -5,12 +5,13 @@ Branch: `feat/rigg-hooks` (från `main`). Uppgift: laga hookarna så att riggen 
 ## Läge
 
 <!-- auto:start -->
-_Fylls i automatiskt av .claude/hooks/session-save.js, senast 11:27._
+_Fylls i automatiskt av .claude/hooks/session-save.js, senast 11:31._
 
 - **Branch:** `feat/rigg-hooks`
-- **Senaste commit:** 1dcc9d2 docs: städa tomma sessionsmallar och skriv sessionslogg för hookarna
+- **Senaste commit:** d5dd17a docs: hela sviten grön (79/79) och minneskedjan provad live
 
 **Dagens commits:**
+- d5dd17a docs: hela sviten grön (79/79) och minneskedjan provad live
 - 1dcc9d2 docs: städa tomma sessionsmallar och skriv sessionslogg för hookarna
 - 2e89827 feat(rigg): koppla in alla sex hooks i settings.json
 - 02dcf2e feat(rigg): guard-hook stoppar farliga kommandon och skrivning till .env
