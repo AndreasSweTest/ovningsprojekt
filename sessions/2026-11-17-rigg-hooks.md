@@ -5,12 +5,14 @@ Branch: `feat/rigg-hooks` (från `main`). Uppgift: laga hookarna så att riggen 
 ## Läge
 
 <!-- auto:start -->
-_Fylls i automatiskt av .claude/hooks/session-save.js, senast 11:53._
+_Fylls i automatiskt av .claude/hooks/session-save.js, senast 11:56._
 
 - **Branch:** `refactor/price-calc`
-- **Senaste commit:** 6137bd0 docs: sessionslogg för research och karakteriseringstester av price_calc
+- **Senaste commit:** b4a0165 docs: codemap och sessionslogg efter refaktoreringssteg 1
 
 **Dagens commits:**
+- b4a0165 docs: codemap och sessionslogg efter refaktoreringssteg 1
+- cf1f49a fix(legacy): parametriserad SQL i price_calc.py och nightly_report.py (steg 1)
 - 6137bd0 docs: sessionslogg för research och karakteriseringstester av price_calc
 - 29109c2 test: karakteriseringstester för price_calc.py (K1–K11)
 - 0bdf6e6 docs: codemap för den äldre prisberäkningen

@@ -58,7 +58,7 @@ Den nattliga rapporten gav `2026-10-01: 1 betalda ordrar, totalt 1187.5 kr` och 
 | # | Problem | Var | Konsekvens |
 |---|---|---|---|
 | P1 | ✅ **Rättat i steg 1 (`cf1f49a`).** **SQL byggs med strängformatering** (`"... %s" % order_id` och `"'%s'" % kod`). Bryter mot "All SQL parametriserad" (CLAUDE.md, `docs/standard.md`). | `price_calc.py:30, 36, 42`, `nightly_report.py:8` | En rabattkod med `'` kraschar beräkningen (verifierat). Med en elak kod i databasen eller ett elakt datumargument till rapporten kan godtycklig SQL köras. `order_id` skyddas idag bara av `int()` i `__main__`. |
-| P2 | **Uppkoppling mot databasen vid import** (`conn = psycopg.connect(...)` på modulnivå). | `price_calc.py:10` | Modulen går inte att importera, och därmed inte enhetstesta, utan en databas. `conn` används som global variabel av rapporten. |
+| P2 | ✅ **Rättat i steg 2 (`b1d48c4`).** **Uppkoppling mot databasen vid import** (`conn = psycopg.connect(...)` på modulnivå). | `price_calc.py:10` | Modulen går inte att importera, och därmed inte enhetstesta, utan en databas. `conn` används som global variabel av rapporten. |
 | P3 | **Avkortning, inte avrundning:** `_kapa` gör `int(x * 100) / 100`. Momsen räknas på det kapade nettot, och totalen kapas inte. | `price_calc.py:23–25, 47–49` | 1044 ger moms 44,97 i stället för 44,98. Filhuvudet säger att avrundningen inte får röras ("ekonomi har stämt av mot den"), så det är **beteende att låsa, inte rätta** utan beslut. |
 | P4 | **Beloppen formateras inte med två decimaler:** `str(Decimal)` ger `"950"`, `"588.8"` och `"736.0"`. | `price_calc.py:66` | Bryter mot "returneras som strängar med två decimaler" (`docs/standard.md`, Pengar). Svaret ser olika ut från order till order. |
 | P5 | **Rabattens giltighetstid ignoreras** (`valid_from`, `valid_to` läses inte). | `price_calc.py:41–45` | 1045 får 15 % med en kod som gick ut 2024. Det är en trolig affärsbugg, och den ska bekräftas med ekonomi innan den rättas. |
@@ -99,7 +99,7 @@ Varje steg ändrar strukturen utan att ändra utdata, så att alla karakteriseri
 - Utdata är oförändrade för K1–K8, K10 och K11. **K9 ändrar beteende:** apostrofen kraschar inte längre, och koden behandlas som okänd (`125`). Testet uppdateras i samma commit med ett nytt förväntat värde. Det är en medveten säkerhetsrättning.
 - Risk: låg. Gör det först, eftersom det är en säkerhetsbrist och kodstandardens tydligaste brott.
 
-**Steg 2 – Ingen uppkoppling vid import (P2)**
+**Steg 2 – Ingen uppkoppling vid import (P2)** ✅ Klart i `b1d48c4`. Den globala `conn` togs bort helt, i stället för att behållas för bakåtkompatibilitet. Rapporten var den enda användaren och uppdaterades i samma commit.
 - Flytta `psycopg.connect` in i en funktion `connect()`. Låt `calc_price(order_id, conn=None)` öppna en egen uppkoppling om ingen skickas in, och låt `__main__` och rapporten skapa sin.
 - För bakåtkompatibilitet behålls namnet `conn` tills rapporten är uppdaterad i samma commit.
 - Utdata är oförändrade, och alla K-tester är gröna. Vinsten är att modulen går att importera utan databas, och det öppnar för enhetstester.

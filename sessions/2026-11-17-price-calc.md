@@ -10,13 +10,22 @@ Researchen, säkerhetsnätet och refaktoreringssteg 1 är klara.
 - `tests/legacy/test_price_calc.py` (`29109c2`) har 12 pytest-tester som låser dagens beteende mot `butik_test`.
 - **Steg 1, parametriserad SQL (`cf1f49a`):** fyra frågor i `price_calc.py` och `nightly_report.py` använder nu parametrar. Diffen är 4 rader. Pytest ger 13 av 13 gröna och Jest 79 av 79.
 
-Nästa steg, efter godkännande: refaktoreringssteg 2, ingen uppkoppling vid import.
+- **Steg 2, ingen uppkoppling vid import (`b1d48c4`):** `connect()` skapar uppkopplingen när den behövs. `calc_price(order_id, conn=None)` tar emot en uppkoppling eller öppnar en egen, och rapporten skickar sin egen. Pytest ger 15 av 15 gröna och Jest 79 av 79.
+
+Nästa steg, efter godkännande: refaktoreringssteg 3, bryt ut den rena beräkningen.
 
 ### Steg 1 i detalj
 
 - **Rött först:** K9 fick ett nytt förväntat värde. En apostrof i rabattkoden ska ge `125`, inte en krasch. Ett nytt test kräver att rapportens datum tolkas som ett värde. Båda var röda före kodändringen (`2 failed, 11 passed`).
 - **Fynd under steget:** rapportens datumargument gick att injicera. `"2026-10-05' or '1'='1"` gav `8 betalda ordrar, totalt 5746.69 kr`, alltså alla ordrar, även avbrutna och obetalda. Det rätta värdet för dagen är `1` order och `224.88 kr`.
 - **Grönt efter:** 13 av 13 pytest-tester och 79 av 79 Jest-tester. Övriga K-tester var oförändrade, så ingen beräkning ändrades.
+
+### Steg 2 i detalj
+
+- **Rött först:** två nya tester. Att importera modulen med en oåtkomlig `DATABASE_URL` gav `psycopg.OperationalError`, och `calc_price(1042, conn)` gav `TypeError: calc_price() takes 1 positional argument but 2 were given`.
+- **Ändring:** `conn = psycopg.connect(...)` på modulnivå ersattes av `connect()`. `calc_price` öppnar och stänger en egen uppkoppling (`with connect()`) om ingen skickas in. `nightly_report.py` importerar `connect` i stället för `conn`.
+- **Grönt efter:** 15 av 15 pytest-tester och 79 av 79 Jest-tester. Alla K-tester var oförändrade, så utdata är desamma via både API:t och rapporten.
+- **Beslut:** den globala `conn` togs bort i stället för att behållas. `grep` visade att rapporten var den enda användaren, och den uppdaterades i samma commit.
 
 ## Vad fungerade (bevis)
 
