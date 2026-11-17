@@ -57,7 +57,7 @@ Den nattliga rapporten gav `2026-10-01: 1 betalda ordrar, totalt 1187.5 kr` och 
 
 | # | Problem | Var | Konsekvens |
 |---|---|---|---|
-| P1 | **SQL byggs med strängformatering** (`"... %s" % order_id` och `"'%s'" % kod`). Bryter mot "All SQL parametriserad" (CLAUDE.md, `docs/standard.md`). | `price_calc.py:30, 36, 42`, `nightly_report.py:8` | En rabattkod med `'` kraschar beräkningen (verifierat). Med en elak kod i databasen eller ett elakt datumargument till rapporten kan godtycklig SQL köras. `order_id` skyddas idag bara av `int()` i `__main__`. |
+| P1 | ✅ **Rättat i steg 1 (`cf1f49a`).** **SQL byggs med strängformatering** (`"... %s" % order_id` och `"'%s'" % kod`). Bryter mot "All SQL parametriserad" (CLAUDE.md, `docs/standard.md`). | `price_calc.py:30, 36, 42`, `nightly_report.py:8` | En rabattkod med `'` kraschar beräkningen (verifierat). Med en elak kod i databasen eller ett elakt datumargument till rapporten kan godtycklig SQL köras. `order_id` skyddas idag bara av `int()` i `__main__`. |
 | P2 | **Uppkoppling mot databasen vid import** (`conn = psycopg.connect(...)` på modulnivå). | `price_calc.py:10` | Modulen går inte att importera, och därmed inte enhetstesta, utan en databas. `conn` används som global variabel av rapporten. |
 | P3 | **Avkortning, inte avrundning:** `_kapa` gör `int(x * 100) / 100`. Momsen räknas på det kapade nettot, och totalen kapas inte. | `price_calc.py:23–25, 47–49` | 1044 ger moms 44,97 i stället för 44,98. Filhuvudet säger att avrundningen inte får röras ("ekonomi har stämt av mot den"), så det är **beteende att låsa, inte rätta** utan beslut. |
 | P4 | **Beloppen formateras inte med två decimaler:** `str(Decimal)` ger `"950"`, `"588.8"` och `"736.0"`. | `price_calc.py:66` | Bryter mot "returneras som strängar med två decimaler" (`docs/standard.md`, Pengar). Svaret ser olika ut från order till order. |
@@ -84,7 +84,7 @@ Förslag: pytest i `tests/legacy/test_price_calc.py`. `pytest.ini` letar redan i
 | K6 | Order utan rader | 1043 | `{"net": "0", "vat": "0", "total": "0"}` | kantfall |
 | K7 | Okänd rabattkod ignoreras | testorder med `FINNSINTE` | `{"net": "100", "vat": "25", "total": "125"}` | tyst fallback |
 | K8 | Order som saknas | 9999 | stdout `{"error": "finns inte"}`, exit 1 | felkontraktet mot `legacyPrice.ts` |
-| K9 | **Rabattkod med apostrof kraschar** (bugg) | testorder med `O'HARA` | exit ≠ 0 | P1 (markeras som känd bugg och byter förväntan när P1 rättas) |
+| K9 | ~~Rabattkod med apostrof kraschar~~ Efter steg 1: koden är ett vanligt värde och ignoreras som okänd | testorder med `O'HARA` | `{"net": "100", "vat": "25", "total": "125"}` | P1 (förväntan bytt i `cf1f49a`) |
 | K10 | Formateringen saknar fasta decimaler | K1, K6 | `"950"` och `"0"`, inte `"950.00"` | P4 |
 | K11 | Nattrapportens summa | `nightly_report.py 2026-10-05` | `2026-10-05: 1 betalda ordrar, totalt 224.88 kr` | rapportvägen och `import conn` |
 
@@ -94,7 +94,7 @@ K1–K8 och K11 är vanliga karakteriseringstester. K9 och K10 dokumenterar bugg
 
 Varje steg ändrar strukturen utan att ändra utdata, så att alla karakteriseringstester (K1–K11) och API-testerna är gröna efter steget. Varje steg får en egen commit (`refactor:`).
 
-**Steg 1 – Parametriserad SQL (P1)**
+**Steg 1 – Parametriserad SQL (P1)** ✅ Klart i `cf1f49a`. Det visade sig att även rapportens datum gick att injicera: `"2026-10-05' or '1'='1"` gav alla 8 ordrar och 5746,69 kr. Ett nytt test låser att det nu ger ett fel.
 - Byt till `cur.execute("... where id = %s", (order_id,))` och motsvarande för `order_lines` och `discounts` i `price_calc.py`, och för datumet i `nightly_report.py`.
 - Utdata är oförändrade för K1–K8, K10 och K11. **K9 ändrar beteende:** apostrofen kraschar inte längre, och koden behandlas som okänd (`125`). Testet uppdateras i samma commit med ett nytt förväntat värde. Det är en medveten säkerhetsrättning.
 - Risk: låg. Gör det först, eftersom det är en säkerhetsbrist och kodstandardens tydligaste brott.

@@ -4,12 +4,19 @@ Branch: `refactor/price-calc` (från `main`). Arbete 3 i kursprojektet. Underlag
 
 ## Läge
 
-Researchen och säkerhetsnätet är klara. Ingen produktionskod är ändrad.
+Researchen, säkerhetsnätet och refaktoreringssteg 1 är klara.
 
 - `docs/codemap-price-calc.md` (`0bdf6e6`) innehåller filer, ansvar, beroenden, 10 kända problem (P1–P10), 11 beteenden att låsa (K1–K11) och 3 refaktoreringssteg.
 - `tests/legacy/test_price_calc.py` (`29109c2`) har 12 pytest-tester som låser dagens beteende mot `butik_test`.
+- **Steg 1, parametriserad SQL (`cf1f49a`):** fyra frågor i `price_calc.py` och `nightly_report.py` använder nu parametrar. Diffen är 4 rader. Pytest ger 13 av 13 gröna och Jest 79 av 79.
 
-Nästa steg, efter godkännande: refaktoreringssteg 1, parametriserad SQL.
+Nästa steg, efter godkännande: refaktoreringssteg 2, ingen uppkoppling vid import.
+
+### Steg 1 i detalj
+
+- **Rött först:** K9 fick ett nytt förväntat värde. En apostrof i rabattkoden ska ge `125`, inte en krasch. Ett nytt test kräver att rapportens datum tolkas som ett värde. Båda var röda före kodändringen (`2 failed, 11 passed`).
+- **Fynd under steget:** rapportens datumargument gick att injicera. `"2026-10-05' or '1'='1"` gav `8 betalda ordrar, totalt 5746.69 kr`, alltså alla ordrar, även avbrutna och obetalda. Det rätta värdet för dagen är `1` order och `224.88 kr`.
+- **Grönt efter:** 13 av 13 pytest-tester och 79 av 79 Jest-tester. Övriga K-tester var oförändrade, så ingen beräkning ändrades.
 
 ## Vad fungerade (bevis)
 
