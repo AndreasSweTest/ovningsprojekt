@@ -107,14 +107,12 @@ def test_order_som_saknas_ger_fel_och_exit_1():
     assert json.loads(out) == {"error": "finns inte"}
 
 
-# K9 – KÄND BUGG (SQL med strängformatering): en rabattkod med apostrof kraschar beräkningen.
-# Ändras i refaktoreringssteg 1 (parametriserad SQL).
-def test_rabattkod_med_apostrof_kraschar():
+# K9 – Rättat i refaktoreringssteg 1 (parametriserad SQL). Tidigare kraschade en rabattkod med
+# apostrof beräkningen med psycopg.errors.SyntaxError. Nu är koden ett vanligt värde: den finns inte
+# i discounts och ignoreras därför, precis som i K7.
+def test_rabattkod_med_apostrof_behandlas_som_vanligt_varde():
     add_order(3001, "O'HARA", [(1, "100.00")])
-    code, out, err = run(SCRIPT, 3001)
-    assert code != 0
-    assert out == ""
-    assert "SyntaxError" in err
+    assert price(3001) == '{"net": "100", "vat": "25", "total": "125"}'
 
 
 # K10 – KÄND AVVIKELSE från docs/standard.md: beloppen har inte fasta två decimaler
@@ -135,3 +133,11 @@ def test_nattrapporten_utan_ordrar():
     code, out, err = run(REPORT, "2026-01-01")
     assert code == 0, err
     assert out == "2026-01-01: 0 betalda ordrar, totalt 0 kr"
+
+
+# Refaktoreringssteg 1: datumet är ett värde, inte SQL. Före steget gav argumentet nedan
+# "8 betalda ordrar, totalt 5746.69 kr" – alla ordrar, även avbrutna och obetalda.
+def test_nattrapporten_tolkar_datumet_som_varde():
+    code, out, _ = run(REPORT, "2026-10-05' or '1'='1")
+    assert code != 0
+    assert "betalda ordrar" not in out
