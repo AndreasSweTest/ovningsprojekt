@@ -1,0 +1,2 @@
+# Skalskript måste ha LF, annars bryter  shebang-raden i Bash.
+*.sh text eol=lf
