@@ -11,6 +11,7 @@ import json
 import os
 import subprocess
 import sys
+from decimal import Decimal
 from pathlib import Path
 
 import psycopg
@@ -28,7 +29,9 @@ assert TEST_DB.rstrip("/").endswith("_test"), f"Vägrar köra mot {TEST_DB}: int
 
 
 @pytest.fixture(autouse=True)
-def reset_db():
+def reset_db(request):
+    if request.node.get_closest_marker("nodb"):
+        return
     sql = "\n".join((ROOT / "db" / f).read_text(encoding="utf-8") for f in ("schema.sql", "seed.sql"))
     with psycopg.connect(TEST_DB, autocommit=True) as conn:
         conn.execute("SET client_min_messages TO warning")
@@ -158,12 +161,47 @@ def test_modulen_gar_att_importera_utan_databas():
     assert res.stdout.strip() == "importerad"
 
 
-def test_calc_price_tar_emot_en_uppkoppling():
+def legacy_module():
+    """Importerar price_calc direkt. Möjligt utan databas sedan steg 2."""
     sys.path.insert(0, str(SCRIPT.parent))
     try:
         import price_calc
     finally:
         sys.path.remove(str(SCRIPT.parent))
+    return price_calc
+
+
+def as_strings(p):
+    return (str(p.net), str(p.vat), str(p.total))
+
+
+def test_calc_price_tar_emot_en_uppkoppling():
+    price_calc = legacy_module()
     with psycopg.connect(TEST_DB, autocommit=True) as conn:
         p = price_calc.calc_price(1042, conn)
-    assert (str(p.net), str(p.vat), str(p.total)) == ("950", "237.5", "1187.5")
+    assert as_strings(p) == ("950", "237.5", "1187.5")
+
+
+# Refaktoreringssteg 3: den rena beräkningen, utan databas och utan loggfil.
+# Samma värden som K1, K2, K3 och K6, men nu som enhetstester.
+@pytest.mark.nodb
+@pytest.mark.parametrize(
+    "lines, percent, expected",
+    [
+        ([(2, Decimal("375.00")), (1, Decimal("200.00"))], None, ("950", "237.5", "1187.5")),  # K1
+        ([(3, Decimal("129.00")), (1, Decimal("349.00"))], 20, ("588.8", "147.2", "736.0")),  # K2
+        ([(1, Decimal("199.90"))], 10, ("179.91", "44.97", "224.88")),  # K3, kapning
+        ([], None, ("0", "0", "0")),  # K6
+    ],
+)
+def test_price_from_raknar_utan_databas(lines, percent, expected):
+    assert as_strings(legacy_module().price_from(lines, percent)) == expected
+
+
+@pytest.mark.nodb
+def test_price_from_skriver_inte_till_loggen():
+    log = SCRIPT.parent / "price_calc.log"
+    before = log.read_bytes() if log.exists() else b""
+    legacy_module().price_from([(1, Decimal("100.00"))], None)
+    after = log.read_bytes() if log.exists() else b""
+    assert after == before
