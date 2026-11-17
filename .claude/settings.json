@@ -5,8 +5,25 @@
     "deny": ["Bash(rm -rf*)", "Bash(git push --force*)", "Bash(git reset --hard*)"]
   },
   "hooks": {
-    "PreToolUse": [{"matcher": "Edit|Write", "hooks": [{"type": "command", "command": "node .claude/hooks/block-test-removal.js"}]}],
-    "PostToolUse": [{"matcher": "Edit|Write", "hooks": [{"type": "command", "command": "bash .claude/hooks/run-checks.sh"}]}],
-    "Stop": [{"hooks": [{"type": "command", "command": "node .claude/hooks/session-save.js"}]}]
+    "SessionStart": [
+      {"hooks": [{"type": "command", "command": "node .claude/hooks/session-load.js"}]}
+    ],
+    "PreToolUse": [
+      {"matcher": "Edit|Write|MultiEdit", "hooks": [
+        {"type": "command", "command": "node .claude/hooks/block-test-removal.js"},
+        {"type": "command", "command": "node .claude/hooks/guard.js"}
+      ]},
+      {"matcher": "Bash|PowerShell", "hooks": [
+        {"type": "command", "command": "node .claude/hooks/guard.js"}
+      ]}
+    ],
+    "PostToolUse": [
+      {"matcher": "Edit|Write|MultiEdit", "hooks": [
+        {"type": "command", "command": "bash .claude/hooks/run-checks.sh", "timeout": 120}
+      ]}
+    ],
+    "Stop": [
+      {"hooks": [{"type": "command", "command": "node .claude/hooks/session-save.js"}]}
+    ]
   }
 }

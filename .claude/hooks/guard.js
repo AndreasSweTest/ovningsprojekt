@@ -36,9 +36,13 @@ process.stdin.on("end", () => {
 
   if (tool === "Bash" || tool === "PowerShell") {
     const command = String(input.command || "");
-    for (const [re, message] of COMMANDS) {
-      if (re.test(command)) block(message);
-    }
+    // Text inom citattecken (t.ex. ett commit-meddelande) är inget kommando. Undantag: .env-regeln,
+    // eftersom ett filnamn inom citattecken ändå kan vara målet ("echo x > '.env'").
+    const unquoted = command.replace(/"(?:\\.|[^"\\])*"|'[^']*'/g, '""');
+    COMMANDS.forEach(([re, message], i) => {
+      const isEnvRule = i === COMMANDS.length - 1;
+      if (re.test(isEnvRule ? command : unquoted)) block(message);
+    });
   } else if (isEnvFile(input.file_path)) {
     block(
       `${path.basename(input.file_path)} kan innehålla hemligheter och skrivs inte av agenten. ` +

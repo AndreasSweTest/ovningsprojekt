@@ -218,7 +218,8 @@ describe("minneskedjan: session-save.js (Stop) och session-load.js (SessionStart
 });
 
 describe("guard.js (PreToolUse Bash och Edit|Write)", () => {
-  const bash = (command: string) => runNode("guard.js", { tool_name: "Bash", tool_input: { command } });
+  const bash = (command: string) =>
+    runNode("guard.js", { tool_name: "Bash", tool_input: { command } });
 
   it.each([
     "git push --force origin main",
@@ -236,12 +237,16 @@ describe("guard.js (PreToolUse Bash och Edit|Write)", () => {
     expect(r.err).toMatch(/HOOK BLOCK \(guard\)/);
   });
 
-  it.each(["npm test", "git status", "git push origin feat/rigg-hooks", "cat .env.example"])(
-    "släpper igenom %j",
-    (command) => {
-      expect(bash(command).code).toBe(0);
-    },
-  );
+  it.each([
+    "npm test",
+    "git status",
+    "git push origin feat/rigg-hooks",
+    "cat .env.example",
+    'git commit -m "guard stoppar git clean -f och git push --force"',
+    "git commit -m 'nämner rm -rf i texten'",
+  ])("släpper igenom %j", (command) => {
+    expect(bash(command).code).toBe(0);
+  });
 
   it.each([".env", ".env.local", "config/.env.production"])("stoppar Write till %s", (file) => {
     const r = runNode("guard.js", {
