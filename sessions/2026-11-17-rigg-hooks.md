@@ -5,12 +5,14 @@ Branch: `feat/rigg-hooks` (från `main`). Uppgift: laga hookarna så att riggen 
 ## Läge
 
 <!-- auto:start -->
-_Fylls i automatiskt av .claude/hooks/session-save.js, senast 12:10._
+_Fylls i automatiskt av .claude/hooks/session-save.js, senast 13:40._
 
-- **Branch:** `refactor/price-calc`
-- **Senaste commit:** 5634b90 docs: migreringsplan för prisberäkningen i expand/contract-steg
+- **Branch:** `main`
+- **Senaste commit:** 27ea61d docs: README stämmer med hur projektet fungerar nu
 
 **Dagens commits:**
+- 27ea61d docs: README stämmer med hur projektet fungerar nu
+- 56f7160 docs: auto-blocket i sessionsloggen uppdaterat av Stop-hooken
 - 5634b90 docs: migreringsplan för prisberäkningen i expand/contract-steg
 - 277b680 docs: codemap och sessionslogg efter refaktoreringssteg 3
 - f45eb6b refactor(legacy): bryt ut den rena beräkningen price_from ur calc_price (steg 3)
